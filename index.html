@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HANSSIP 360°</title>
+<meta name="description" content="VR360 tour và mặt bằng quy hoạch KCN Hỗ trợ Nam Hà Nội (HANSSIP) · 360° tour and site plan">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.15.1/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.15.1/index.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js",
+    "@photo-sphere-viewer/core": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.15.1/index.module.js",
+    "@photo-sphere-viewer/markers-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.15.1/index.module.js"
+  }
+}
+</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+<header class="bar">
+  <h1 id="title">HANSSIP</h1>
+  <nav class="tabs" role="tablist">
+    <button id="tab-pano" role="tab" aria-selected="true" data-view="pano">360°</button>
+    <button id="tab-map" role="tab" aria-selected="false" data-view="map" data-i18n="sitePlan">Mặt bằng</button>
+  </nav>
+  <div class="actions">
+    <button id="btn-lang" class="chip" title="Tiếng Việt / English">EN</button>
+    <button id="btn-share" class="chip" data-i18n="share">Chia sẻ</button>
+    <button id="btn-contact" class="chip accent" data-i18n="contact">Liên hệ</button>
+  </div>
+</header>
+
+<main>
+  <section id="view-pano" class="view">
+    <div id="viewer"></div>
+    <div id="sample-badge" class="badge" hidden data-i18n="sample">Ảnh mẫu – chưa phải ảnh thực tế của KCN</div>
+    <div id="minimap" class="minimap" aria-label="mini map"></div>
+    <div id="scenes" class="scenes"></div>
+  </section>
+
+  <section id="view-map" class="view" hidden>
+    <div id="map"></div>
+    <div id="legend" class="legend"></div>
+    <div class="search">
+      <input id="search" type="search" autocomplete="off" data-i18n-ph="searchPh" placeholder="Tìm lô, ví dụ 2.3-CN4">
+      <ul id="search-results"></ul>
+    </div>
+  </section>
+</main>
+
+<div id="panel" class="panel" hidden>
+  <div class="panel-box" role="dialog" aria-modal="true">
+    <button class="panel-close" aria-label="close">×</button>
+    <div id="panel-body"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

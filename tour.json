@@ -1,0 +1,67 @@
+{
+  "title": {"vi": "KCN Hỗ trợ Nam Hà Nội (HANSSIP)", "en": "Hanoi Southern Supporting Industrial Park (HANSSIP)"},
+  "contact": {
+    "name": {"vi": "Phòng kinh doanh", "en": "Sales office"},
+    "phone": "",
+    "zalo": "",
+    "email": "",
+    "note": {"vi": "Thông tin liên hệ sẽ được cập nhật.", "en": "Contact details coming soon."}
+  },
+  "plots": "data/plots.geojson",
+  "start": "a1",
+  "scenes": [
+    {
+      "id": "a1",
+      "name": {"vi": "Toàn cảnh KCN (trên cao)", "en": "Park overview (aerial)"},
+      "type": "aerial",
+      "sample": true,
+      "image": "scenes/a1/pano.jpg",
+      "thumb": "scenes/a1/thumb.jpg",
+      "lat": 20.6935, "lon": 105.9362,
+      "north": 0,
+      "view": {"yaw": 0, "pitch": -10, "zoom": 30},
+      "hotspots": [
+        {"type": "link", "to": "g1"},
+        {"type": "link", "to": "g2"},
+        {"type": "info", "yaw": 40, "pitch": -25,
+         "title": {"vi": "Khu công nghiệp giai đoạn 2", "en": "Industrial area, phase 2"},
+         "text": {"vi": "Các lô đất công nghiệp CN1–CN5. Xem chi tiết từng lô ở tab Mặt bằng.", "en": "Industrial plots CN1–CN5. See each plot in the Site plan tab."}},
+        {"type": "landmark", "lat": 21.0285, "lon": 105.8542, "pitch": 0,
+         "title": {"vi": "Trung tâm Hà Nội", "en": "Hanoi city centre"}},
+        {"type": "landmark", "lat": 20.7075, "lon": 105.9173, "pitch": -6,
+         "title": {"vi": "Nút giao cao tốc Pháp Vân – Cầu Giẽ", "en": "Phap Van – Cau Gie expressway exit"}}
+      ]
+    },
+    {
+      "id": "g1",
+      "name": {"vi": "Lối vào từ cao tốc", "en": "Entrance from the expressway"},
+      "type": "ground",
+      "sample": true,
+      "image": "scenes/g1/pano.jpg",
+      "thumb": "scenes/g1/thumb.jpg",
+      "lat": 20.7068, "lon": 105.9196,
+      "north": 0,
+      "view": {"yaw": 120, "pitch": 0, "zoom": 20},
+      "hotspots": [
+        {"type": "link", "to": "a1"},
+        {"type": "link", "to": "g2"}
+      ]
+    },
+    {
+      "id": "g2",
+      "name": {"vi": "Đường nội bộ khu công nghiệp", "en": "Internal road, industrial area"},
+      "type": "ground",
+      "sample": true,
+      "image": "scenes/g2/pano.jpg",
+      "thumb": "scenes/g2/thumb.jpg",
+      "lat": 20.6905, "lon": 105.9345,
+      "north": 0,
+      "view": {"yaw": 0, "pitch": 0, "zoom": 20},
+      "hotspots": [
+        {"type": "link", "to": "a1"},
+        {"type": "link", "to": "g1"}
+      ]
+    }
+  ],
+  "credits": "Sample panoramas: Poly Haven (CC0) · Site plan data: HANSSIP 2 land-use planning map"
+}
