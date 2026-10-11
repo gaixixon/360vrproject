@@ -30,7 +30,7 @@ drone 360 photos ──► stitched panoramas (2:1 equirectangular)
 Site: **HANSSIP 2** (KCN Hỗ trợ Nam Hà Nội), Đại Xuyên, Phú Xuyên, Hà Nội.
 
 - `source/`: original planning files (DWG, DXF converted from it, PDFs).
-- `data/plots.geojson`: 101 plots from the DXF (code, area, floors, density, FAR, land use, outline) in WGS84, converted from VN-2000 Hà Nội zone (CM 105°00'). `status` is `matched` (area within 2%), `approx` (2–10%) or `unmatched` (label point only, outline to fix by hand).
+- `data/plots.geojson`: 100 plots from the DXF (code, area, floors, density, FAR, land use, outline) in WGS84, converted from VN-2000 Hà Nội zone (CM 105°00'). `status` is `matched` (area within 2%), `approx` (2–10%) or `partial` (drawn outline differs more; `note` explains known drawing errors). A legend sample label outside the park is skipped.
 - `tour.json`: scenes and hotspots (format in [CONTENT.md](CONTENT.md)); `scenes/<id>/pano.jpg` + `thumb.jpg`.
 - `index.html`, `app.js`, `style.css`: the static viewer (Photo Sphere Viewer 5, Leaflet; no build step).
 - `tools/extract_plots.py`: rebuilds `data/plots.geojson` from the DXF (Python venv `~/.cache/vrtools-venv`).

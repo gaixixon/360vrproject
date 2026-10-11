@@ -7,7 +7,8 @@ const UI = {
     sitePlan: 'Mặt bằng', share: 'Chia sẻ', contact: 'Liên hệ', sample: 'Ảnh mẫu – chưa phải ảnh thực tế của KCN',
     searchPh: 'Tìm lô, ví dụ 2.3-CN4', code: 'Mã lô', landuse: 'Chức năng', area: 'Diện tích', floors: 'Tầng cao',
     density: 'Mật độ XD', far: 'Hệ số SDĐ', approx: 'Ranh giới vẽ lệch {d}% so với diện tích quy hoạch.',
-    unmatched: 'Chưa có ranh giới lô trên bản đồ (đang cập nhật).', copied: 'Đã sao chép đường dẫn',
+    unmatched: 'Chưa có ranh giới lô trên bản đồ (đang cập nhật).',
+    partial: 'Ranh giới vẽ ({o} ha) nhỏ hơn diện tích quy hoạch {d}%.', copied: 'Đã sao chép đường dẫn',
     view360: 'Xem 360°', goTo: 'Đi tới', phone: 'Gọi', satellite: 'Vệ tinh', streets: 'Bản đồ', plotsLayer: 'Lô đất',
     noResult: 'Không tìm thấy', away: 'cách {d} km',
   },
@@ -15,7 +16,8 @@ const UI = {
     sitePlan: 'Site plan', share: 'Share', contact: 'Contact', sample: 'Sample photo – not the actual park yet',
     searchPh: 'Find a plot, e.g. 2.3-CN4', code: 'Plot', landuse: 'Land use', area: 'Area', floors: 'Floors',
     density: 'Site coverage', far: 'Floor area ratio', approx: 'Drawn outline differs by {d}% from the planned area.',
-    unmatched: 'Plot outline not on the map yet (being updated).', copied: 'Link copied',
+    unmatched: 'Plot outline not on the map yet (being updated).',
+    partial: 'The drawn outline ({o} ha) is {d}% smaller than the planned area.', copied: 'Link copied',
     view360: 'View 360°', goTo: 'Go to', phone: 'Call', satellite: 'Satellite', streets: 'Map', plotsLayer: 'Plots',
     noResult: 'No match', away: '{d} km away',
   },
@@ -144,7 +146,7 @@ const satellite = () => L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest
 const streets = () => L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19, attribution: '© OpenStreetMap contributors',
 });
-const plotStyle = (f) => ({ color: '#fff', weight: 1, opacity: 0.8, fillColor: classOf(f.properties.code).color, fillOpacity: 0.55 });
+const plotStyle = (f) => ({ color: '#fff', weight: 1, opacity: 0.8, dashArray: f.properties.status === 'partial' ? '4 3' : null, fillColor: classOf(f.properties.code).color, fillOpacity: 0.55 });
 const outlined = () => plots.features.filter((f) => f.geometry.type !== 'Point');
 
 const coneIcon = () => L.divIcon({
@@ -186,8 +188,13 @@ function plotPopup(p) {
     [ui('density'), p.density_pct != null ? `${num(p.density_pct, 1)}%` : '–'],
     [ui('far'), num(p.far)],
   ];
-  const note = p.status === 'approx' ? ui('approx', { d: num(p.area_diff_pct, 1) }) : p.status === 'unmatched' ? ui('unmatched') : '';
-  return `<strong>${esc(p.code)}</strong><table class="kv">${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</table>${note ? `<p class="note">${esc(note)}</p>` : ''}`;
+  const notes = [
+    p.status === 'approx' && ui('approx', { d: num(p.area_diff_pct, 1) }),
+    p.status === 'partial' && ui('partial', { o: num(p.outline_ha, 4), d: num(p.area_diff_pct, 1) }),
+    p.status === 'unmatched' && ui('unmatched'),
+    t(p.note),
+  ].filter(Boolean);
+  return `<strong>${esc(p.code)}</strong><table class="kv">${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</table>${notes.map((n) => `<p class="note">${esc(n)}</p>`).join('')}`;
 }
 
 function initSiteMap() {
