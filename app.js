@@ -1,6 +1,9 @@
 import { Viewer } from '@photo-sphere-viewer/core';
 import { MarkersPlugin } from '@photo-sphere-viewer/markers-plugin';
 
+// Conceptual 3D: assumed storey height (m) by land-use class; others 4 m
+const STOREY_M = { industrial: 6, residential: 3.3, public: 4, education: 4, health: 4 };
+
 /* ---------- text ---------- */
 const UI = {
   vi: {
@@ -11,6 +14,16 @@ const UI = {
     partial: 'Ranh giới vẽ ({o} ha) nhỏ hơn diện tích quy hoạch {d}%.', copied: 'Đã sao chép đường dẫn',
     view360: 'Xem 360°', goTo: 'Đi tới', phone: 'Gọi', satellite: 'Vệ tinh', streets: 'Bản đồ', plotsLayer: 'Lô đất',
     noResult: 'Không tìm thấy', away: 'cách {d} km',
+    concept: 'Mô hình khái niệm – thể hiện giới hạn quy hoạch, không phải hiện trạng',
+    conceptTitle: 'Mô hình 3D khái niệm',
+    conceptBody: [
+      'Mô hình này minh họa chỉ tiêu quy hoạch, không thể hiện hiện trạng khu đất hay công trình thực tế.',
+      'Ranh giới lô lấy từ bản đồ quy hoạch sử dụng đất tỷ lệ 1/2000; lô có ranh giới vẽ chưa khớp diện tích được làm mờ.',
+      'Mỗi lô có chỉ tiêu tầng cao được vẽ thành một khối: thu đều vào từ ranh lô đến khi đạt mật độ xây dựng tối đa, cao bằng số tầng tối đa × chiều cao tầng giả định ({h}).',
+      'Địa hình coi như phẳng; mặt đường là phần đất giữa các lô, tim đường lấy từ bản vẽ.',
+    ],
+    storeys: 'công nghiệp {i} m, công cộng / giáo dục / y tế {p} m, nhà ở {r} m',
+    massNote: 'Khối khái niệm: cao khoảng {h} m (tối đa {f} tầng × {s} m).',
   },
   en: {
     sitePlan: 'Site plan', share: 'Share', contact: 'Contact', sample: 'Sample photo – not the actual park yet',
@@ -20,6 +33,16 @@ const UI = {
     partial: 'The drawn outline ({o} ha) is {d}% smaller than the planned area.', copied: 'Link copied',
     view360: 'View 360°', goTo: 'Go to', phone: 'Call', satellite: 'Satellite', streets: 'Map', plotsLayer: 'Plots',
     noResult: 'No match', away: '{d} km away',
+    concept: 'Conceptual model – shows planning limits, not actual site conditions',
+    conceptTitle: 'Conceptual 3D model',
+    conceptBody: [
+      'This model illustrates the planning rules. It does not depict the actual site or any real buildings.',
+      'Plot outlines come from the 1:2000 land-use planning map; plots whose drawn outline does not match the planned area are see-through.',
+      'Each plot with a floors limit is drawn as one block: its outline shrunk evenly until it reaches the maximum site coverage, as tall as the maximum floors × an assumed storey height ({h}).',
+      'The ground is treated as flat; road surfaces are the land between plots, with centre lines from the drawing.',
+    ],
+    storeys: 'industrial {i} m, public / education / health {p} m, housing {r} m',
+    massNote: 'Conceptual block: about {h} m tall (max {f} floors × {s} m).',
   },
 };
 
@@ -49,8 +72,8 @@ const store = {
 };
 const hash = Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
 let lang = ['vi', 'en'].includes(hash.lang) ? hash.lang : (store.get('lang') || 'vi');
-let tour, plots, scene, viewer, markers, minimap, siteMap;
-let currentView = hash.view === 'map' ? 'map' : 'pano';
+let tour, plots, massing, scene, viewer, markers, minimap, siteMap, view3d;
+let currentView = ['map', '3d'].includes(hash.view) ? hash.view : 'pano';
 const hidden = new Set();
 
 const $ = (s) => document.querySelector(s);
@@ -231,17 +254,24 @@ function addLayerControl() {
 }
 
 function refreshPlots() {
-  siteMap.plotsLayer.clearLayers();
-  siteMap.plotsLayer.addData(plots);
+  if (siteMap) {
+    siteMap.plotsLayer.clearLayers();
+    siteMap.plotsLayer.addData(plots);
+  }
+  view3d?.applyFilter();
 }
 
 function renderLegend() {
+  if (!plots) return;
   const used = new Set(plots.features.map((f) => classOf(f.properties.code).id));
-  $('#legend').innerHTML = [...CLASSES, OTHER].filter((c) => used.has(c.id)).map((c) => `<label><input type="checkbox" data-cls="${c.id}" ${hidden.has(c.id) ? '' : 'checked'}><i style="background:${c.color}"></i>${esc(c[lang])}</label>`).join('');
-  $('#legend').querySelectorAll('input').forEach((cb) => cb.addEventListener('change', () => {
-    cb.checked ? hidden.delete(cb.dataset.cls) : hidden.add(cb.dataset.cls);
-    refreshPlots();
-  }));
+  document.querySelectorAll('.legend').forEach((el) => {
+    el.innerHTML = [...CLASSES, OTHER].filter((c) => used.has(c.id)).map((c) => `<label><input type="checkbox" data-cls="${c.id}" ${hidden.has(c.id) ? '' : 'checked'}><i style="background:${c.color}"></i>${esc(c[lang])}</label>`).join('');
+    el.querySelectorAll('input').forEach((cb) => cb.addEventListener('change', () => {
+      cb.checked ? hidden.delete(cb.dataset.cls) : hidden.add(cb.dataset.cls);
+      document.querySelectorAll(`.legend input[data-cls="${cb.dataset.cls}"]`).forEach((o) => { o.checked = cb.checked; });
+      refreshPlots();
+    }));
+  });
 }
 
 function findPlot(code) {
@@ -271,16 +301,44 @@ function initSearch() {
   });
 }
 
+/* ---------- conceptual 3D ---------- */
+const storeyText = () => ui('storeys', { i: num(STOREY_M.industrial, 1), p: num(STOREY_M.public, 1), r: num(STOREY_M.residential, 1) });
+
+function showConcept() {
+  openPanel(`<h2>${ui('conceptTitle')}</h2>${UI[lang].conceptBody.map((p) => `<p>${esc(p.replace('{h}', storeyText()))}</p>`).join('')}`);
+}
+
+async function init3dView() {
+  const [{ init3d }, data] = await Promise.all([import('./view3d.js'), fetch('data/massing.geojson').then((r) => r.json())]);
+  massing = data;
+  view3d = init3d($('#view3d'), {
+    plots, massing, tour, classOf, hidden, t, storeyM: STOREY_M,
+    onPlot: (p, h) => {
+      const floors = parseInt(p.floors, 10);
+      const note = h ? `<p class="note">${esc(ui('massNote', { h: num(h, 0), f: floors, s: num(h / floors, 1) }))}</p>` : '';
+      openPanel(plotPopup(p) + note);
+    },
+    onScene: (id) => { setView('pano'); goScene(id); },
+  });
+  view3d.applyLang();
+  view3d.applyFilter();
+  renderLegend();
+}
+
 /* ---------- chrome ---------- */
-function setView(v) {
+async function setView(v) {
   currentView = v;
-  $('#view-pano').hidden = v !== 'pano';
-  $('#view-map').hidden = v !== 'map';
-  $('#tab-pano').setAttribute('aria-selected', String(v === 'pano'));
-  $('#tab-map').setAttribute('aria-selected', String(v === 'map'));
+  for (const [id, name] of [['pano', 'pano'], ['map', 'map'], ['3d', '3d']]) {
+    $(`#view-${id}`).hidden = v !== name;
+    $(`#tab-${id}`).setAttribute('aria-selected', String(v === name));
+  }
+  if (v !== '3d') view3d?.hide();
   if (v === 'map') {
     if (!siteMap) initSiteMap();
     siteMap.invalidateSize();
+  } else if (v === '3d') {
+    if (!view3d) await init3dView();
+    if (currentView === '3d') view3d.show();
   } else {
     minimap?.invalidateSize();
   }
@@ -297,8 +355,9 @@ function applyLang() {
   document.title = `${t(tour.title)} · 360°`;
   renderScenes();
   if (markers && scene) { markers.setMarkers(buildMarkers()); viewer.setOption('caption', t(scene.name)); }
+  renderLegend();
+  view3d?.applyLang();
   if (siteMap) {
-    renderLegend();
     siteMap.closePopup();
     siteMap.removeControl(siteMap.layerControl);
     addLayerControl();
@@ -309,7 +368,7 @@ function updateHash() {
   if (!scene || !viewer) return;
   const p = viewer.getPosition();
   const h = new URLSearchParams({ scene: scene.id, yaw: Math.round(deg(p.yaw)), pitch: Math.round(deg(p.pitch)), lang });
-  if (currentView === 'map') h.set('view', 'map');
+  if (currentView !== 'pano') h.set('view', currentView);
   history.replaceState(null, '', `#${h}`);
 }
 
@@ -368,6 +427,8 @@ async function main() {
 
 $('#tab-pano').addEventListener('click', () => setView('pano'));
 $('#tab-map').addEventListener('click', () => setView('map'));
+$('#tab-3d').addEventListener('click', () => setView('3d'));
+$('#concept-badge').addEventListener('click', showConcept);
 $('#btn-lang').addEventListener('click', () => { lang = lang === 'vi' ? 'en' : 'vi'; store.set('lang', lang); applyLang(); updateHash(); });
 $('#btn-share').addEventListener('click', share);
 $('#btn-contact').addEventListener('click', () => tour && showContact());

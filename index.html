@@ -13,6 +13,7 @@
 {
   "imports": {
     "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/",
     "@photo-sphere-viewer/core": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.15.1/index.module.js",
     "@photo-sphere-viewer/markers-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.15.1/index.module.js"
   }
@@ -26,6 +27,7 @@
   <nav class="tabs" role="tablist">
     <button id="tab-pano" role="tab" aria-selected="true" data-view="pano">360°</button>
     <button id="tab-map" role="tab" aria-selected="false" data-view="map" data-i18n="sitePlan">Mặt bằng</button>
+    <button id="tab-3d" role="tab" aria-selected="false" data-view="3d">3D</button>
   </nav>
   <div class="actions">
     <button id="btn-lang" class="chip" title="Tiếng Việt / English">EN</button>
@@ -44,11 +46,19 @@
 
   <section id="view-map" class="view" hidden>
     <div id="map"></div>
-    <div id="legend" class="legend"></div>
+    <div class="legend"></div>
     <div class="search">
       <input id="search" type="search" autocomplete="off" data-i18n-ph="searchPh" placeholder="Tìm lô, ví dụ 2.3-CN4">
       <ul id="search-results"></ul>
     </div>
+  </section>
+
+  <section id="view-3d" class="view" hidden>
+    <div id="view3d">
+      <button class="compass" aria-label="north">N</button>
+    </div>
+    <button id="concept-badge" class="badge concept"><span data-i18n="concept">Mô hình khái niệm – thể hiện giới hạn quy hoạch, không phải hiện trạng</span> <b class="info-i">i</b></button>
+    <div class="legend"></div>
   </section>
 </main>
 
